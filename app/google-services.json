@@ -1,0 +1,48 @@
+{
+  "_comment": "IMPORTANT: Replace this file with your actual google-services.json from Firebase Console",
+  "_instructions": [
+    "1. Go to https://console.firebase.google.com/",
+    "2. Create a new project or select existing project",
+    "3. Add an Android app with package name: com.dreamweaver.ai",
+    "4. Download the google-services.json file",
+    "5. Replace this file with your downloaded google-services.json",
+    "6. Enable Firestore Database in Firebase Console"
+  ],
+  "project_info": {
+    "project_number": "YOUR_PROJECT_NUMBER",
+    "project_id": "your-project-id",
+    "storage_bucket": "your-project-id.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:123456789000:android:abcdef123456",
+        "android_client_info": {
+          "package_name": "com.dreamweaver.ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "123456789000-abcdefghijklmnop.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDemoKey-This-Is-Not-Real-Key-12345678"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "123456789000-abcdefghijklmnop.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
