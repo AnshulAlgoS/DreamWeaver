@@ -93,10 +93,15 @@ with creative and contextual suggestions, making storytelling collaborative and 
     - Download `google-services.json` and place it in `app/` directory
     - Enable Firestore Database in Firebase Console
 
-4. **API Configuration**
-    - The app uses NVIDIA NIM API for AI generation
-    - API key is included in the code (for demo purposes)
-    - For production, store API keys securely using BuildConfig or env variables
+4. **Configure NVIDIA API Key**
+    - Get your API key from [NVIDIA NIM](https://build.nvidia.com/)
+    - Open `local.properties` file in the project root
+    - Add your API key:
+      ```properties
+      NVIDIA_API_KEY=your_api_key_here
+      ```
+    - ⚠️ **IMPORTANT**: Never commit `local.properties` to version control (it's already in
+      `.gitignore`)
 
 5. **Build and Run**
    ```bash

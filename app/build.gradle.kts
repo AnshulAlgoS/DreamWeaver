@@ -19,6 +19,20 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Read API key from local.properties
+        val properties = java.util.Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { properties.load(it) }
+        }
+
+        // Add API key to BuildConfig
+        buildConfigField(
+            "String",
+            "NVIDIA_API_KEY",
+            "\"${properties.getProperty("NVIDIA_API_KEY", "")}\""
+        )
     }
 
     buildTypes {
@@ -42,6 +56,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {

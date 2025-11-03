@@ -3,6 +3,7 @@ package com.dreamweaver.ai.ai
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import com.dreamweaver.ai.BuildConfig
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +27,7 @@ class RunAnywhereHelper(private val context: Context) {
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
 
-    private val apiKey = "YOUR_API_KEY_HERE"
+    private val apiKey = BuildConfig.NVIDIA_API_KEY
     private val baseURL = "https://integrate.api.nvidia.com/v1"
 
     private val client = OkHttpClient.Builder()
