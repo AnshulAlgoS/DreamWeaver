@@ -7,9 +7,9 @@
   <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase"/>
 </p>
 
-**DreamWeaver** is an AI-powered storytelling companion app for Android that helps you create
-amazing stories through interactive conversation. Using advanced AI models, it continues your story
-ideas with creative and contextual suggestions, making storytelling collaborative and fun!
+**DreamWeaver** is an interactive storytelling companion app for Android that helps you create
+amazing stories through conversation. Using advanced language models, it continues your story ideas
+with creative and contextual suggestions, making storytelling collaborative and fun!
 
 ## ✨ Features
 
@@ -22,15 +22,14 @@ ideas with creative and contextual suggestions, making storytelling collaborativ
 
 ### 💬 **Interactive Two-Way Chat**
 
-- Beautiful chat interface with distinct user/AI message bubbles
-- Blue bubbles for your input, purple for AI responses
+- Beautiful chat interface with distinct user/assistant message bubbles
+- Blue bubbles for your input, purple for assistant responses
 - Smooth animations and auto-scroll
-- Real-time "AI thinking" indicator
+- Real-time "thinking" indicator
 
 ### 🔊 **Voice Narration**
-
 - Toggle voice narration on/off with a single tap
-- AI speaks all story responses using Text-to-Speech
+- Assistant speaks all story responses using Text-to-Speech
 - Visual indicator (speaker icon) shows narration status
 - Purple icon = Voice ON, Gray icon = Voice OFF
 
@@ -79,7 +78,7 @@ ideas with creative and contextual suggestions, making storytelling collaborativ
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/DreamWeaver.git
+   git clone https://github.com/AnshulAlgoS/DreamWeaver.git
    cd DreamWeaver
    ```
 
@@ -112,7 +111,7 @@ ideas with creative and contextual suggestions, making storytelling collaborativ
 1. **Launch the app** - You'll see the onboarding screen
 2. **Tap "Start Story"** - Begins a new storytelling session
 3. **Type or speak** - Enter your story beginning
-4. **Watch the magic** - AI continues your story creatively!
+4. **Watch the magic** - Assistant continues your story creatively!
 
 ### Voice Controls
 
@@ -154,7 +153,7 @@ ideas with creative and contextual suggestions, making storytelling collaborativ
 ```
 app/
 ├── src/main/java/com/dreamweaver/ai/
-│   ├── ai/                    # AI and speech helpers
+│   ├── ai/                    # Language model and speech helpers
 │   │   ├── RunAnywhereHelper.kt
 │   │   └── SpeechRecognizerHelper.kt
 │   ├── data/                  # Data models
@@ -260,11 +259,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Google** for Android development tools
 - **Material Design** for UI guidelines
 
+## 👨‍💻 Developer
+
+Built with 🔥 by **Firebender**
+
 ## 📧 Contact
 
 For questions or feedback, please open an issue on GitHub.
 
 ---
 
-<p align="center">Made with ❤️ and AI</p>
 <p align="center">⭐ Star this repo if you find it helpful!</p>
