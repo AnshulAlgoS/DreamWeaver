@@ -42,19 +42,28 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
     private val _modelStatus = MutableStateFlow<String>("Checking for local AI model...")
     val modelStatus: StateFlow<String> = _modelStatus.asStateFlow()
 
+    private val _downloadProgress = MutableStateFlow<Int>(0)
+    val downloadProgress: StateFlow<Int> = _downloadProgress.asStateFlow()
+
+    private val _isDownloading = MutableStateFlow(false)
+    val isDownloading: StateFlow<Boolean> = _isDownloading.asStateFlow()
+
     private var currentSessionId: String = ""
     private val contextMemory = mutableListOf<String>() // Store last 10 messages
     private val maxContextSize = 10
+    private var isModelLoaded = false
 
     companion object {
         private const val TAG = "StoryViewModel"
+        private const val QWEN_MODEL_ID =
+            "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q6_k.gguf"
     }
 
     init {
         initializeApp()
         // Try to load AI model in background
         viewModelScope.launch(Dispatchers.IO) {
-            tryLoadAIModel()
+            downloadAndLoadAIModel()
         }
     }
 
@@ -76,17 +85,20 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Try to load the AI model if available
+     * Download and load the AI model
      */
-    private suspend fun tryLoadAIModel() {
+    private suspend fun downloadAndLoadAIModel() {
         try {
-            Log.i(TAG, "🔍 Attempting to load AI model...")
-            _modelStatus.value = "Loading AI model..."
+            Log.i(TAG, "🤖 Starting AI model setup...")
+            _modelStatus.value = "Initializing AI..."
 
-            delay(5000) // Wait for SDK initialization
+            // Wait for SDK initialization
+            delay(3000)
 
-            // Scan for downloaded models first
-            Log.i(TAG, "📡 Scanning for downloaded models...")
+            // Step 1: Scan for downloaded models
+            Log.i(TAG, "📡 Scanning for existing models...")
+            _modelStatus.value = "Scanning for models..."
+
             try {
                 val runAnywhereClass = Class.forName("com.runanywhere.sdk.public.RunAnywhere")
                 val instanceField = runAnywhereClass.getDeclaredField("INSTANCE")
@@ -107,20 +119,213 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e(TAG, "❌ Scan failed: ${e.message}", e)
             }
 
-            // Now try to load the model by filename
-            Log.i(TAG, "📥 Attempting to load model...")
-            val success = runAnywhereHelper.loadModel("qwen2.5-1.5b-instruct-q6_k.gguf")
+            // Step 2: Check if model exists, if not download it
+            Log.i(TAG, "🔍 Checking if model needs to be downloaded...")
+            _modelStatus.value = "Checking model availability..."
+
+            val modelExists = checkIfModelExists()
+
+            if (!modelExists) {
+                Log.i(TAG, "📥 Model not found, starting download...")
+                _modelStatus.value = "Downloading AI model..."
+                _isDownloading.value = true
+
+                val downloaded = downloadModel(QWEN_MODEL_ID)
+
+                _isDownloading.value = false
+
+                if (!downloaded) {
+                    Log.w(TAG, "⚠️ Download failed, using fallback mode")
+                    _modelStatus.value = "Using fallback mode"
+                    return
+                }
+
+                Log.i(TAG, "✅ Model downloaded successfully")
+            } else {
+                Log.i(TAG, "✅ Model already exists")
+            }
+
+            // Step 3: Load the model
+            Log.i(TAG, "📥 Loading AI model into memory...")
+            _modelStatus.value = "Loading AI model..."
+
+            val success = runAnywhereHelper.loadModel(QWEN_MODEL_ID)
 
             if (success) {
-                Log.i(TAG, "🎉 Model loaded successfully!")
+                Log.i(TAG, "🎉 AI model loaded successfully!")
                 _modelStatus.value = "✅ Local AI Active"
+                isModelLoaded = true
             } else {
-                Log.w(TAG, "⚠️ Model not loaded, using fallback")
-                _modelStatus.value = "Fallback mode"
+                Log.w(TAG, "⚠️ Model failed to load, using fallback mode")
+                _modelStatus.value = "Using fallback mode"
+                isModelLoaded = false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed: ${e.message}", e)
-            _modelStatus.value = "Fallback mode"
+            Log.e(TAG, "❌ AI model setup failed: ${e.message}", e)
+            _modelStatus.value = "Using fallback mode"
+            isModelLoaded = false
+        }
+    }
+
+    /**
+     * Check if model file exists locally
+     */
+    private suspend fun checkIfModelExists(): Boolean {
+        return try {
+            val runAnywhereClass = Class.forName("com.runanywhere.sdk.public.RunAnywhere")
+            val instanceField = runAnywhereClass.getDeclaredField("INSTANCE")
+            val runAnywhereInstance = instanceField.get(null)
+
+            // Get available models method
+            val extensionsClass =
+                Class.forName("com.runanywhere.sdk.public.extensions.ModelRegistrationExtensionsKt")
+            val listModelsMethod = extensionsClass.getDeclaredMethod(
+                "listAvailableModels",
+                kotlin.coroutines.Continuation::class.java
+            )
+
+            val models = withContext(Dispatchers.IO) {
+                kotlin.coroutines.suspendCoroutine<List<*>> { continuation ->
+                    listModelsMethod.invoke(null, continuation)
+                }
+            }
+
+            // Check if any model is downloaded
+            for (model in models) {
+                if (model == null) continue
+
+                try {
+                    val isDownloadedField = model.javaClass.getDeclaredField("isDownloaded")
+                    isDownloadedField.isAccessible = true
+                    val isDownloaded = isDownloadedField.get(model) as Boolean
+
+                    if (isDownloaded) {
+                        Log.d(TAG, "Found downloaded model: $model")
+                        return@checkIfModelExists true
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not check model download status: ${e.message}")
+                }
+            }
+
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking model existence: ${e.message}", e)
+            false
+        }
+    }
+
+    /**
+     * Download a model with progress tracking
+     */
+    @Suppress("UNCHECKED_CAST")
+    private suspend fun downloadModel(modelUrl: String): Boolean {
+        return try {
+            Log.i(TAG, "🌐 Starting model download...")
+            Log.i(TAG, "   URL: $modelUrl")
+
+            val runAnywhereClass = Class.forName("com.runanywhere.sdk.public.RunAnywhere")
+            val instanceField = runAnywhereClass.getDeclaredField("INSTANCE")
+            val runAnywhereInstance = instanceField.get(null)
+
+            val downloadMethod = runAnywhereClass.getDeclaredMethod(
+                "downloadModel",
+                String::class.java,
+                kotlin.coroutines.Continuation::class.java
+            )
+
+            withContext(Dispatchers.IO) {
+                kotlin.coroutines.suspendCoroutine { continuation ->
+                    try {
+                        // Invoke downloadModel with continuation callback
+                        downloadMethod.invoke(
+                            runAnywhereInstance,
+                            modelUrl,
+                            object : kotlin.coroutines.Continuation<Any> {
+                                override val context = continuation.context
+
+                                override fun resumeWith(result: Result<Any>) {
+                                    result.fold(
+                                        onSuccess = { flow ->
+                                            // Flow returned successfully
+                                            if (flow == null) {
+                                                Log.e(TAG, "❌ Download returned null flow")
+                                                continuation.resumeWith(Result.success(false))
+                                                return@fold
+                                            }
+
+                                            viewModelScope.launch(Dispatchers.IO) {
+                                                try {
+                                                    // Collect the flow
+                                                    val collectMethod =
+                                                        flow.javaClass.getDeclaredMethod(
+                                                            "collect",
+                                                            Any::class.java,
+                                                            kotlin.coroutines.Continuation::class.java
+                                                        )
+
+                                                    // Create a collector
+                                                    val collectorClass =
+                                                        Class.forName("kotlinx.coroutines.flow.FlowCollector")
+                                                    val collector =
+                                                        java.lang.reflect.Proxy.newProxyInstance(
+                                                            collectorClass.classLoader,
+                                                            arrayOf(collectorClass)
+                                                        ) { _, method, args ->
+                                                            if (method.name == "emit") {
+                                                                val progress = args[0] as Float
+                                                                val percentage =
+                                                                    (progress * 100).toInt()
+                                                                _downloadProgress.value = percentage
+                                                                Log.d(
+                                                                    TAG,
+                                                                    "📊 Download progress: $percentage%"
+                                                                )
+
+                                                                // Return continuation result
+                                                                (args[1] as kotlin.coroutines.Continuation<Unit>).resumeWith(
+                                                                    Result.success(Unit)
+                                                                )
+                                                            }
+                                                            null
+                                                        }
+
+                                                    kotlin.coroutines.suspendCoroutine<Unit> { flowCont ->
+                                                        collectMethod.invoke(
+                                                            flow,
+                                                            collector,
+                                                            flowCont
+                                                        )
+                                                    }
+
+                                                    Log.i(TAG, "✅ Download completed!")
+                                                    continuation.resumeWith(Result.success(true))
+                                                } catch (e: Exception) {
+                                                    Log.e(
+                                                        TAG,
+                                                        "❌ Error collecting download flow: ${e.message}",
+                                                        e
+                                                    )
+                                                    continuation.resumeWith(Result.success(false))
+                                                }
+                                            }
+                                        },
+                                        onFailure = { error ->
+                                            Log.e(TAG, "❌ Download failed: ${error.message}", error)
+                                            continuation.resumeWith(Result.success(false))
+                                        }
+                                    )
+                                }
+                            })
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Download invocation failed: ${e.message}", e)
+                        continuation.resumeWith(Result.success(false))
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Download setup failed: ${e.message}", e)
+            false
         }
     }
 
