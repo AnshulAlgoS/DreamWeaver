@@ -55,8 +55,10 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "StoryViewModel"
+
+        // Using smaller model for faster download and testing (119 MB instead of 1.2 GB)
         private const val QWEN_MODEL_ID =
-            "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q6_k.gguf"
+            "https://huggingface.co/prithivMLmods/SmolLM2-360M-GGUF/resolve/main/SmolLM2-360M.Q8_0.gguf"
     }
 
     init {
