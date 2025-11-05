@@ -10,10 +10,13 @@ import com.dreamweaver.ai.ai.SpeechResult
 import com.dreamweaver.ai.data.StoryMessage
 import com.dreamweaver.ai.firebase.FirestoreHelper
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class StoryViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -36,6 +39,9 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
     private val _isVoiceNarrationEnabled = MutableStateFlow(true)
     val isVoiceNarrationEnabled: StateFlow<Boolean> = _isVoiceNarrationEnabled.asStateFlow()
 
+    private val _modelStatus = MutableStateFlow<String>("Checking for local AI model...")
+    val modelStatus: StateFlow<String> = _modelStatus.asStateFlow()
+
     private var currentSessionId: String = ""
     private val contextMemory = mutableListOf<String>() // Store last 10 messages
     private val maxContextSize = 10
@@ -46,6 +52,10 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         initializeApp()
+        // Try to load AI model in background
+        viewModelScope.launch(Dispatchers.IO) {
+            tryLoadAIModel()
+        }
     }
 
     private fun initializeApp() {
@@ -62,6 +72,55 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error initializing TTS (app will continue without voice)", e)
             }
+        }
+    }
+
+    /**
+     * Try to load the AI model if available
+     */
+    private suspend fun tryLoadAIModel() {
+        try {
+            Log.i(TAG, "🔍 Attempting to load AI model...")
+            _modelStatus.value = "Loading AI model..."
+
+            delay(5000) // Wait for SDK initialization
+
+            // Scan for downloaded models first
+            Log.i(TAG, "📡 Scanning for downloaded models...")
+            try {
+                val runAnywhereClass = Class.forName("com.runanywhere.sdk.public.RunAnywhere")
+                val instanceField = runAnywhereClass.getDeclaredField("INSTANCE")
+                val runAnywhereInstance = instanceField.get(null)
+
+                val scanMethod = runAnywhereClass.getDeclaredMethod(
+                    "scanForDownloadedModels",
+                    kotlin.coroutines.Continuation::class.java
+                )
+
+                withContext(Dispatchers.IO) {
+                    kotlin.coroutines.suspendCoroutine<Unit> { continuation ->
+                        scanMethod.invoke(runAnywhereInstance, continuation)
+                    }
+                }
+                Log.i(TAG, "✅ Scan complete")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Scan failed: ${e.message}", e)
+            }
+
+            // Now try to load the model by filename
+            Log.i(TAG, "📥 Attempting to load model...")
+            val success = runAnywhereHelper.loadModel("qwen2.5-1.5b-instruct-q6_k.gguf")
+
+            if (success) {
+                Log.i(TAG, "🎉 Model loaded successfully!")
+                _modelStatus.value = "✅ Local AI Active"
+            } else {
+                Log.w(TAG, "⚠️ Model not loaded, using fallback")
+                _modelStatus.value = "Fallback mode"
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed: ${e.message}", e)
+            _modelStatus.value = "Fallback mode"
         }
     }
 
@@ -210,9 +269,9 @@ class StoryViewModel(application: Application) : AndroidViewModel(application) {
                 _isAiThinking.value = true
 
                 Log.d(TAG, "Calling generateStory...")
-                val aiResponse = runAnywhereHelper.generateStory(
-                    context = contextMemory.toList(),
-                    userInput = text
+                val aiResponse = runAnywhereHelper.generateStoryUsingSDK(
+                    userPrompt = text,
+                    context = contextMemory.toList()
                 )
 
                 Log.d(TAG, "AI Response received: $aiResponse")

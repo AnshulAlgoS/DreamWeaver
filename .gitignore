@@ -89,3 +89,12 @@ lint/tmp/
 
 # Gradle wrapper (optional - uncomment if you want to commit wrapper)
 gradle-8.2/
+
+# macOS files
+.DS_Store
+
+# Kotlin build files
+.kotlin/
+
+# AI Models (too large for git)
+dreamweaver_models/

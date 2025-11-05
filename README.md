@@ -15,7 +15,7 @@ with creative and contextual suggestions, making storytelling collaborative and 
 
 ### 🤖 **AI-Powered Story Generation**
 
-- Real-time story continuation using NVIDIA NIM API (Llama 3.1)
+- Real-time story continuation using RunAnywhere SDK (local on-device AI inference)
 - Context-aware responses that understand your story's flow
 - Intelligent fallback system for offline functionality
 - Maintains conversation history for consistent storytelling
@@ -93,17 +93,7 @@ with creative and contextual suggestions, making storytelling collaborative and 
     - Download `google-services.json` and place it in `app/` directory
     - Enable Firestore Database in Firebase Console
 
-4. **Configure NVIDIA API Key**
-    - Get your API key from [NVIDIA NIM](https://build.nvidia.com/)
-    - Open `local.properties` file in the project root
-    - Add your API key:
-      ```properties
-      NVIDIA_API_KEY=your_api_key_here
-      ```
-    - ⚠️ **IMPORTANT**: Never commit `local.properties` to version control (it's already in
-      `.gitignore`)
-
-5. **Build and Run**
+4. **Build and Run**
    ```bash
    ./gradlew assembleDebug
    ```
@@ -150,7 +140,7 @@ with creative and contextual suggestions, making storytelling collaborative and 
 - **Dependency Injection**: Android ViewModels
 - **Networking**: OkHttp + Gson
 - **Backend**: Firebase Firestore
-- **AI Model**: NVIDIA NIM (Llama 3.1-8b-instruct)
+- **AI Model**: RunAnywhere SDK (local on-device AI inference)
 - **Speech**: Android SpeechRecognizer + TextToSpeech
 
 ### Project Structure
@@ -186,7 +176,7 @@ app/
 
 #### **RunAnywhereHelper**
 
-- AI story generation using NVIDIA NIM API
+- AI story generation using RunAnywhere SDK
 - Text-to-Speech integration
 - Fallback story generation
 - API request/response handling
@@ -207,8 +197,8 @@ app/
 
 ### AI Model Configuration
 
-The app is configured to use NVIDIA's Llama 3.1-8b-instruct model. You can change the model in
-`RunAnywhereHelper.kt`:
+The app is configured to use RunAnywhere SDK for local on-device AI inference. You can change the
+model configuration in `RunAnywhereHelper.kt`:
 
 ```kotlin
 val requestBody = ApiRequest(
@@ -259,7 +249,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **NVIDIA NIM** for AI model API
+- **RunAnywhere AI** for the local on-device AI inference SDK
 - **Firebase** for backend infrastructure
 - **Google** for Android development tools
 - **Material Design** for UI guidelines
@@ -275,3 +265,4 @@ For questions or feedback, please open an issue on GitHub.
 ---
 
 <p align="center">⭐ Star this repo if you find it helpful!</p>
+
